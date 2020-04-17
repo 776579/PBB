@@ -69,11 +69,12 @@ def search(terms):
             if args.verbose:
                 if dataset in results.keys():
                     for fieldname in results[dataset]:
-                        print(f'-->{len(fieldname)} hits for {fieldname}: '\
+                        print(f'-->{len(fieldname)} hits for {fieldname}: '
                               f'{",".join(results[dataset][fieldname])}')
                 print(f'✓ Done.')
 
         return results
+
 
 def email_requestor(address):
     # TODO: Validate email
@@ -89,11 +90,11 @@ def main():
                         type=str,
                         help='Relative path to data dump folder with CSV.')
     group.add_argument('-t', '--terms',
-                        type=str,
-                        help='Specify comma seperated search term(s).')
+                       type=str,
+                       help='Specify comma seperated search term(s).')
     group.add_argument('-r', '--request_file',
-                        type=str,
-                        help='Specify request file.')
+                       type=str,
+                       help='Specify request file.')
     parser.add_argument('-v', '--verbose',
                         action="store_true",
                         help='Print progress and results in console.')
@@ -131,13 +132,13 @@ def main():
                 reader = csv.DictReader(fo)
                 if reader.fieldnames != REQUEST_FIELDNAMES:
                     sys.exit(
-                        f'❗️ Failed to parse request {args.request_file}.' \
+                        f'❗️ Failed to parse request {args.request_file}.'
                         f'Expected field names are {REQUEST_FIELDNAMES}.')
                 else:
                     for row in reader:
                         terms = construct_terms(row['Terms'])
                         if args.verbose:
-                            print(f'\n👉 Processing request ID {row["ID"]}, ' \
+                            print(f'\n👉 Processing request ID {row["ID"]}, '
                                   f'search terms: {terms}')
                         email_addr = row['Email']
                         results = search(terms)
@@ -155,7 +156,6 @@ def main():
             results = search(terms)
     else:
         sys.exit('\n⚠️ Empty search terms. Nothing to do.')
-
 
 
 if __name__ == '__main__':
