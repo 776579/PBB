@@ -69,7 +69,8 @@ def search(terms):
             if args.verbose:
                 if dataset in results.keys():
                     for fieldname in results[dataset]:
-                        print(f'-->{len(fieldname)} hits for {fieldname}: '
+                        print(f'-->{len(results[dataset][fieldname])} '
+                              f'hits for {fieldname}: '
                               f'{",".join(results[dataset][fieldname])}')
                 print(f'✓ Done.')
 
