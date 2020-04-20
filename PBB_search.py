@@ -97,6 +97,7 @@ def email_requestor(request, results):
                     'Fieldname': fieldname,
                     'Matches': len(gids),
                     'GIDs': gids,
+                    'URL': dataset_url,
                 })
 
     # set Email headers
@@ -178,7 +179,8 @@ def main():
                                    'Key': row['Key']}
                         terms = construct_terms(request['Terms'])
                         if args.verbose:
-                            print(f'\n👉 Processing request ID {row["ID"]}, '
+                            print(f'\n👉 Processing request ID'
+                                   '{request["Key"]}, '
                                   f'search terms: {terms}')
 
                         results = search(terms)
