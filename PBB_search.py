@@ -80,7 +80,7 @@ def search(terms):
 
 def email_requestor(request, results):
     # TODO: Prep CSV attachment
-    print(f'\n ✉️ Emailing {request['Name']}...')
+    print(f'\n ✉️ Emailing {request["Name"]}...')
     results_file = args.request_file.replace('.csv', '_results.csv')
     with open(results_file, 'w') as fp:
         writer = csv.DictWriter(
