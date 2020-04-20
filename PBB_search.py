@@ -2,6 +2,7 @@ import csv
 import os
 import sys
 import smtplib
+from email.message import EmailMessage
 
 from pprint import pprint
 
@@ -11,7 +12,7 @@ REQUEST_FIELDNAMES = ['Terms',
                       'Name',
                       'Email',
                       'Date',
-                      'ID']
+                      'Key']
 
 
 def construct_terms(terms):
@@ -77,10 +78,41 @@ def search(terms):
         return results
 
 
-def email_requestor(address):
-    # TODO: Validate email
-    print('email_requestor executed. ')
-    pass
+def email_requestor(request, results):
+    # TODO: Prep CSV attachment
+    print(f'\n ✉️ Emailing {request['Name']}...')
+    results_file = args.request_file.replace('.csv', '_results.csv')
+    with open(results_file, 'w') as fp:
+        writer = csv.DictWriter(
+            fp, fieldnames=['Dataset', 'Fieldname', 'Matches', 'GIDs'])
+        writer.writeheader()
+
+        for dataset in results.keys():
+            for fieldname in results[dataset].keys():
+                gids = results[dataset][fieldname]
+                writer.writerow({
+                    'Dataset': dataset,
+                    'Fieldname': fieldname,
+                    'Matches': len(gids),
+                    'GIDs': gids,
+                })
+
+    # set Email headers
+    msg = EmailMessage()
+    msg['Subject'] = f'[DO NOT REPLY]Search results for Query {request["Key"]}'
+    msg['From'] = 'pbb@eicc.emory.edu'
+    msg['To'] = request['Email']
+    # set Email body
+    # dataset_url = ''
+    msg.set_content(
+        f'{request["Name"]}:\nPlease see the attached results of your search request.\n\n')
+    # attach csv to Email
+    with open(results_file, 'r') as fp:
+        csv_data = fp.read()
+        msg.add_attachment(csv_data, filename=results_file)
+    # send Email
+    s = smtplib.SMTP('smtp.service.emory.edu')
+    s.send_message(msg)
 
 
 def main():
@@ -137,14 +169,20 @@ def main():
                         f'Expected field names are {REQUEST_FIELDNAMES}.')
                 else:
                     for row in reader:
-                        terms = construct_terms(row['Terms'])
+                        request = {'Terms': row['Terms'],
+                                   'Name': row['Name'],
+                                   'Email': row['Email'],
+                                   'Date': row['Date'],
+                                   'Key': row['Key']}
+                        terms = construct_terms(request['Terms'])
                         if args.verbose:
                             print(f'\n👉 Processing request ID {row["ID"]}, '
                                   f'search terms: {terms}')
-                        email_addr = row['Email']
+
                         results = search(terms)
                         # TODO: Validate email address
-                        email_requestor(results)
+                        email_requestor(request, results)
+
                         if args.verbose:
                             print(f'\n✅ Completed request ID {row["ID"]}.')
         else:
