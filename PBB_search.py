@@ -115,8 +115,8 @@ def email_requestor(request, results):
         csv_data = fp.read()
         msg.add_attachment(csv_data, filename=results_file.split('/')[-1])
     # send Email
-    s = smtplib.SMTP('smtp.service.emory.edu')
-    s.send_message(msg)
+    # s = smtplib.SMTP('smtp.service.emory.edu')
+    # s.send_message(msg)
 
 
 def main():
