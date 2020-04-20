@@ -80,16 +80,18 @@ def search(terms):
 
 def email_requestor(request, results):
     # TODO: Prep CSV attachment
-    print(f'\n ✉️ Emailing {request["Name"]}...')
+    print(f'\n ✉️ Emailing {request["Name"]} for request {request["Key"]}...')
     results_file = args.request_file.replace('.csv', '_results.csv')
     with open(results_file, 'w') as fp:
         writer = csv.DictWriter(
-            fp, fieldnames=['Dataset', 'Fieldname', 'Matches', 'GIDs'])
+            fp, fieldnames=['Dataset', 'Fieldname', 'Matches', 'GIDs', 'URL'])
         writer.writeheader()
 
         for dataset in results.keys():
             for fieldname in results[dataset].keys():
                 gids = results[dataset][fieldname]
+                dataset_url = f'https://lk.eicc.emory.edu:8172/PBB%20Case%20Scenario/query-executeQuery.view?schemaName=study&query.queryName={dataset.replace(".csv", "")}&query.GlobalID~in={";".join(gids)}'
+                print(dataset_url)
                 writer.writerow({
                     'Dataset': dataset,
                     'Fieldname': fieldname,
@@ -103,7 +105,7 @@ def email_requestor(request, results):
     msg['From'] = 'pbb@eicc.emory.edu'
     msg['To'] = request['Email']
     # set Email body
-    # dataset_url = ''
+
     msg.set_content(
         f'{request["Name"]}:\nPlease see the attached results of your search request.\n\n')
     # attach csv to Email
