@@ -179,7 +179,7 @@ def main():
                                    'Key': row['Key']}
                         terms = construct_terms(request['Terms'])
                         if args.verbose:
-                            print(f'\n👉 Processing request ID'
+                            print(f'\n👉 Processing request '
                                    '{request["Key"]}, '
                                   f'search terms: {terms}')
 
@@ -188,7 +188,7 @@ def main():
                         email_requestor(request, results)
 
                         if args.verbose:
-                            print(f'\n✅ Completed request ID {row["ID"]}.')
+                            print(f'\n✅ Completed request {request["Key"]}.')
         else:
             sys.exit('❗️ Invalid request file path.')
     elif args.terms:
