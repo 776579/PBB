@@ -81,7 +81,8 @@ def search(terms):
 def email_requestor(request, results):
     # TODO: Prep CSV attachment
     print(f'\n ✉️ Emailing {request["Name"]} for request {request["Key"]}...')
-    results_file = args.request_file.replace('.csv', '_results.csv')
+    results_file = args.request_file.replace(
+        '.csv', f'_{request["Key"]}.csv')
     with open(results_file, 'w') as fp:
         writer = csv.DictWriter(
             fp, fieldnames=['Dataset', 'Fieldname', 'Matches', 'GIDs', 'URL'])
@@ -91,7 +92,6 @@ def email_requestor(request, results):
             for fieldname in results[dataset].keys():
                 gids = results[dataset][fieldname]
                 dataset_url = f'https://lk.eicc.emory.edu:8172/PBB%20Case%20Scenario/query-executeQuery.view?schemaName=study&query.queryName={dataset.replace(".csv", "")}&query.GlobalID~in={";".join(gids)}'
-                print(dataset_url)
                 writer.writerow({
                     'Dataset': dataset,
                     'Fieldname': fieldname,
@@ -111,7 +111,7 @@ def email_requestor(request, results):
     # attach csv to Email
     with open(results_file, 'r') as fp:
         csv_data = fp.read()
-        msg.add_attachment(csv_data, filename=results_file)
+        msg.add_attachment(csv_data, filename=results_file.split('/')[-1])
     # send Email
     s = smtplib.SMTP('smtp.service.emory.edu')
     s.send_message(msg)
