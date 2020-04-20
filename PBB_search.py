@@ -91,9 +91,10 @@ def email_requestor(request, results):
         for dataset in results.keys():
             for fieldname in results[dataset].keys():
                 gids = results[dataset][fieldname]
-                dataset_url = f'https://lk.eicc.emory.edu:8172/PBB%20Case%20Scenario/query-executeQuery.view?schemaName=study&query.queryName={dataset.replace(".csv", "")}&query.GlobalID~in={";".join(gids)}'
+                dataset_name = dataset.replace('.csv', '')
+                dataset_url = f'https://lk.eicc.emory.edu:8172/PBB%20Case%20Scenario/query-executeQuery.view?schemaName=study&query.queryName={dataset_name)}&query.GlobalID~in={";".join(gids)}'
                 writer.writerow({
-                    'Dataset': dataset,
+                    'Dataset': dataset_name,
                     'Fieldname': fieldname,
                     'Matches': len(gids),
                     'GIDs': gids,
