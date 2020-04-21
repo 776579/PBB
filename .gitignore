@@ -132,4 +132,4 @@ dmypy.json
 # Local testing data
 db/
 *.csv
-
+.DS_Store
