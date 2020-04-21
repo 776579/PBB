@@ -2,11 +2,12 @@ import csv
 import os
 import sys
 import smtplib
-from email.message import EmailMessage
 
+from email.message import EmailMessage
 from pprint import pprint
 
 import argparse
+
 
 REQUEST_FIELDNAMES = ['Terms',
                       'Name',
@@ -21,8 +22,8 @@ def construct_terms(terms):
             terms = terms.split(',')
             terms = [term.lower().strip() for term in terms]
         except Exception:
-            sys.exit(f'\n❗️ Unsupported format of search terms: {type(terms)}')
-
+            sys.exit(f'\n❗️ Unsupported format of search terms:'
+                     f'{terms} {type(terms)}')
     return terms
 
 
@@ -58,7 +59,6 @@ def search(terms):
                             #           f'{value}, {type(value)}.')
                             # ---
                             target += str(value)
-
                         # Search and compose results dict
                         if all(term in target.lower() for term in terms):
                             if dataset not in results.keys():
@@ -71,52 +71,84 @@ def search(terms):
                 if dataset in results.keys():
                     for fieldname in results[dataset]:
                         print(f'-->{len(results[dataset][fieldname])} '
-                              f'hits for {fieldname}: '
-                              f'{",".join(results[dataset][fieldname])}')
+                              f'hit(s) for {fieldname}')
+                        if args.terms:
+                            print(f'[{",".join(results[dataset][fieldname])}]')
                 print(f'✓ Done.')
 
         return results
 
 
+def dataset_url(dataset_name, gids):
+    if isinstance(gids, list):
+        dataset_url = (f'https://lk.eicc.emory.edu:8172/'
+                       f'PBB%20Case%20Scenario/query-executeQuery.view'
+                       f'?schemaName=study&query.queryName={str(dataset_name)}'
+                       f'&query.GlobalID~in={";".join(gids)}')
+        return dataset_url
+    else:
+        sys.exit(f'\n❗️Failed to generate dataset URL due to non-list GIDs.')
+
+
 def email_requestor(request, results):
-    # TODO: Prep CSV attachment
-    print(f'\n ✉️ Emailing {request["Name"]} for request {request["Key"]}...')
+    print(f'\n📬 Emailing {request["Name"]} {request["Email"]} '
+          f'for request {request["Key"]}...')
+    # Prep CSV attachment
+    # Temporary files are named with request filename appended by request id
     results_file = args.request_file.replace(
         '.csv', f'_{request["Key"]}.csv')
+
     with open(results_file, 'w') as fp:
         writer = csv.DictWriter(
             fp, fieldnames=['Dataset', 'Fieldname', 'Matches', 'GIDs', 'URL'])
         writer.writeheader()
-
         for dataset in results.keys():
             for fieldname in results[dataset].keys():
                 gids = results[dataset][fieldname]
                 dataset_name = dataset.replace('.csv', '')
-                dataset_url = f'https://lk.eicc.emory.edu:8172/PBB%20Case%20Scenario/query-executeQuery.view?schemaName=study&query.queryName={dataset_name}&query.GlobalID~in={";".join(gids)}'
                 writer.writerow({
                     'Dataset': dataset_name,
                     'Fieldname': fieldname,
                     'Matches': len(gids),
                     'GIDs': ';'.join(gids),
-                    'URL': dataset_url,
+                    'URL': dataset_url(dataset_name, gids),
                 })
-
-    # set Email headers
+        print(f'📎 Results file saved as {os.path.abspath(results_file)}.')
+    # Set email headers
     msg = EmailMessage()
-    msg['Subject'] = f'[DO NOT REPLY]Search results for Query {request["Key"]}'
+    msg['Subject'] = f'Results for query {request["Key"]}'
     msg['From'] = 'pbb@eicc.emory.edu'
     msg['To'] = request['Email']
-    # set Email body
-
+    # Set Email body
     msg.set_content(
-        f'{request["Name"]}:\nPlease see the attached results of your search request.\n\n')
-    # attach csv to Email
+        f'{request["Name"]},'
+         '\n\nPlease see the attached results of your search request.'
+         '\n\nDD NOT reply to this email.')
+    # Attach csv to Email
     with open(results_file, 'r') as fp:
         csv_data = fp.read()
-        msg.add_attachment(csv_data, filename=results_file.split('/')[-1])
-    # send Email
-    # s = smtplib.SMTP('smtp.service.emory.edu')
-    # s.send_message(msg)
+        # Only use the last part of absolute file name
+        attachment_filename = results_file.split('/')[-1]
+        msg.add_attachment(csv_data, filename=attachment_filename)
+    # Connect to SMTP server
+    try:
+        smtp = smtplib.SMTP('smtp.service.emory.edu')
+    except Exception as err:
+        sys.exit(f'❗️Failed to initialize connection to SMTP server. '
+                 f'Detail: {err}')
+    # Send email
+    try:
+        non_deliveries = smtp.send_message(msg)
+    except Exception as err:
+        sys.exit(f'❗️Failed to send email. Detail: {err}')
+    else:
+        if bool(non_deliveries):
+            # If message failed to deliver
+            print(f'\n⚠️ Email failed to deliver. Detail: '
+                  f'{pprint(non_deliveries)} ')
+        else:
+            print('✉️ Sent.')
+
 
 
 def main():
@@ -181,8 +213,11 @@ def main():
                         terms = construct_terms(request['Terms'])
                         if args.verbose:
                             print(f'\n👉 Processing request '
-                                   '{request["Key"]}, '
-                                  f'search terms: {terms}')
+                                  f'{request["Key"]}: '
+                                  f'\n\tRequestor: {request["Name"]} '
+                                  f'{request["Email"]}'
+                                  f'\n\tSearch terms: {terms}'
+                                  f'\n\tSubmitted at {request["Date"]}')
 
                         results = search(terms)
                         # TODO: Validate email address
