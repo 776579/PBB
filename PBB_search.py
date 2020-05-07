@@ -152,6 +152,8 @@ def email_requestor(request, results):
 
 
 def main():
+    if sys.version_info.major < 3:
+        sys.exit('❗️ Python3 required.')
     parser = argparse.ArgumentParser()
     group = parser.add_mutually_exclusive_group(required=True)
     parser.add_argument('-f', '--folder_path',
